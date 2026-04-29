@@ -4,6 +4,8 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+local UI_NAME = "Proohio_Main" 
+
 local function Tween(obj, props, dur, style, dir)
     TweenService:Create(obj, TweenInfo.new(dur or 0.15, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props):Play()
 end
@@ -45,7 +47,6 @@ local THEMES = {
     Ocean = {Bg=Color3.fromRGB(18,22,40), Header=Color3.fromRGB(14,18,34), Sidebar=Color3.fromRGB(14,18,34), El=Color3.fromRGB(24,30,52), Text=Color3.fromRGB(210,210,255), Sub=Color3.fromRGB(100,110,180), Muted=Color3.fromRGB(50,55,100)}
 }
 
-local LibID = "Proohio_"..math.random(10000,99999)
 local ScreenGui, MainUI, FloatBtn, UIVisible, IsMobile, T
 
 local function DetectMobile()
@@ -79,9 +80,9 @@ function Proohio.CreateLib(name, theme)
     T = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
     name = name or "Proohio UI"
     
-    -- Destroy old UI instances
+    -- FIXED: Destroy OLD UI by looking for the specific static name
     for _,v in ipairs(game.CoreGui:GetChildren()) do
-        if v.Name == LibID then
+        if v.Name == UI_NAME then
             v:Destroy()
         end
     end
@@ -90,7 +91,7 @@ function Proohio.CreateLib(name, theme)
     local parentGui = gethui and gethui() or game.CoreGui
     
     ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = LibID
+    ScreenGui.Name = UI_NAME -- Use the static name
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
     ScreenGui.Parent = parentGui
@@ -110,7 +111,6 @@ function Proohio.CreateLib(name, theme)
     Icon.ScaleType = Enum.ScaleType.Crop
     Icon.ZIndex = 1001
 
-    -- Convert FloatBtn to TextButton for click support
     local FloatBtnClick = Instance.new("TextButton")
     FloatBtnClick.BackgroundTransparency = 1
     FloatBtnClick.Size = UDim2.new(1,0,1,0)
