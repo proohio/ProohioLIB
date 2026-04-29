@@ -85,11 +85,14 @@ function Proohio.CreateLib(name, theme)
         end 
     end
     
+    -- Use gethui() if available, otherwise use CoreGui
+    local parentGui = gethui and gethui() or game.CoreGui
+    
     ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = LibID
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
-    ScreenGui.Parent = game.CoreGui
+    ScreenGui.Parent = parentGui
     ScreenGui.DisplayOrder = 100
 
     -- Floating Toggle Button
@@ -106,7 +109,13 @@ function Proohio.CreateLib(name, theme)
     Icon.ScaleType = Enum.ScaleType.Crop
     Icon.ZIndex = 1001
 
-    FloatBtn.MouseButton1Click:Connect(function() 
+    -- Convert FloatBtn to TextButton for click support
+    local FloatBtnClick = Instance.new("TextButton")
+    FloatBtnClick.BackgroundTransparency = 1
+    FloatBtnClick.Size = UDim2.new(1,0,1,0)
+    FloatBtnClick.Text = ""
+    FloatBtnClick.Parent = FloatBtn
+    FloatBtnClick.MouseButton1Click:Connect(function() 
         Proohio:ToggleUI() 
     end)
     
@@ -688,12 +697,6 @@ function Proohio.CreateLib(name, theme)
                         Btn.ZIndex=3
                         Btn.Parent=OB
                         Instance.new("UIPadding",Btn).PaddingLeft=UDim.new(0,12)
-                        Btn.MouseEnter:Connect(function() 
-                            Tween(Btn,{BackgroundTransparency=0.93,TextColor3=T.Text},0.08) 
-                        end)
-                        Btn.MouseLeave:Connect(function() 
-                            Tween(Btn,{BackgroundTransparency=1,TextColor3=Color3.fromRGB(102,102,102)},0.08) 
-                        end)
                         Btn.MouseButton1Click:Connect(function()
                             HL.Text=o
                             cb(o)
@@ -702,6 +705,12 @@ function Proohio.CreateLib(name, theme)
                             Tween(Arr,{Rotation=0},0.12)
                             Wrap.Size=UDim2.new(1,0,0,GetElH())
                             Resize()
+                        end)
+                        Btn.MouseEnter:Connect(function() 
+                            Tween(Btn,{BackgroundTransparency=0.93,TextColor3=T.Text},0.08) 
+                        end)
+                        Btn.MouseLeave:Connect(function() 
+                            Tween(Btn,{BackgroundTransparency=1,TextColor3=Color3.fromRGB(102,102,102)},0.08) 
                         end)
                     end
                 end
