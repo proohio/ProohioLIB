@@ -226,8 +226,7 @@ function Proohio.CreateLib(name, theme)
     UserName.TextXAlignment=Enum.TextXAlignment.Left
     UserName.TextTruncate=Enum.TextTruncate.AtEnd
     UserName.Parent=Profile
-    local Status = CreateFrame({Color=Color3.fromRGB(34,197,94), Size=UDim2.new(0,5,0,5), Pos=UDim2.new(1,-18,0.5,-2.5), Parent=Profile})
-    Corner(Status,100)
+
     local lp = Players.LocalPlayer
     DispName.Text = lp.DisplayName
     UserName.Text = "@"..lp.Name
