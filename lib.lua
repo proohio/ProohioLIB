@@ -1,6 +1,3 @@
---// Proohio UI Library - FINAL FIXED VERSION
---// GitHub: https://github.com/proohio/ProohioLIB
-
 local Proohio = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -82,14 +79,12 @@ function Proohio.CreateLib(name, theme)
     T = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
     name = name or "Proohio UI"
     
-    -- FIXED: Destroy old UI from BOTH CoreGui AND gethui()
     for _,v in ipairs(game.CoreGui:GetChildren()) do
         if v.Name == UI_NAME then
             v:Destroy()
         end
     end
     
-    -- Also check gethui() if it exists
     if gethui then
         local hui = gethui()
         for _,v in ipairs(hui:GetChildren()) do
@@ -108,16 +103,15 @@ function Proohio.CreateLib(name, theme)
     ScreenGui.Parent = parentGui
     ScreenGui.DisplayOrder = 100
 
-    -- FIXED: Floating button starts in CENTER of screen
-    FloatBtn = CreateFrame({Color=T.Header, Size=UDim2.new(0,42,0,42), Pos=UDim2.new(0.5,-21,0.5,-21), Parent=ScreenGui, Z=1000})
-    Corner(FloatBtn,100)
-    Stroke(FloatBtn, Color3.fromRGB(255,255,255), 0.9)
+    FloatBtn = CreateFrame({Color=T.Header, Size=UDim2.new(0,48,0,48), Pos=UDim2.new(0.5,-24,0.5,-24), Parent=ScreenGui, Z=1000})
+    Corner(FloatBtn,12)
+    Stroke(FloatBtn, T.Sub, 0.8, 2)
     
     local Icon = Instance.new("ImageLabel")
     Icon.Parent = FloatBtn
     Icon.BackgroundTransparency = 1
-    Icon.Size = UDim2.new(1,-8,1,-8)
-    Icon.Position = UDim2.new(0,4,0,4)
+    Icon.Size = UDim2.new(1,-10,1,-10)
+    Icon.Position = UDim2.new(0,5,0,5)
     Icon.Image = "rbxassetid://74489035156742"
     Icon.ScaleType = Enum.ScaleType.Crop
     Icon.ZIndex = 1001
@@ -131,7 +125,6 @@ function Proohio.CreateLib(name, theme)
         Proohio:ToggleUI() 
     end)
     
-    -- FIXED: Drag functionality for float button
     do 
         local drag,dragInput,dragStart,startPos
         FloatBtn.InputBegan:Connect(function(input)
@@ -159,7 +152,6 @@ function Proohio.CreateLib(name, theme)
         end)
     end
 
-    -- Main UI starts in center
     MainUI = CreateFrame({Color=T.Bg, Size=UDim2.new(0,0,0,0), Pos=UDim2.new(0.5,-290,0.5,-210), Clip=true, Parent=ScreenGui})
     MainUI.Visible = false
     Corner(MainUI,12)
@@ -181,7 +173,6 @@ function Proohio.CreateLib(name, theme)
     Title.ZIndex=2
     Title.Parent=TitleBar
 
-    -- Drag MainUI
     do 
         local drag,dragInput,dragStart,startPos
         TitleBar.InputBegan:Connect(function(input)
