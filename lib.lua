@@ -3,18 +3,15 @@ local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-
 local function Tween(obj, props, dur, style, dir)
     TweenService:Create(obj, TweenInfo.new(dur or 0.15, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props):Play()
 end
-
 local function Corner(p, r)
     local c = Instance.new("UICorner")
     c.CornerRadius = UDim.new(0, r or 10)
     c.Parent = p
     return c
 end
-
 local function Stroke(p, col, tr, th)
     local s = Instance.new("UIStroke")
     s.Color = col or Color3.fromRGB(255,255,255)
@@ -23,7 +20,6 @@ local function Stroke(p, col, tr, th)
     s.Parent = p
     return s
 end
-
 local function CreateFrame(props)
     local f = Instance.new("Frame")
     f.BackgroundTransparency = props.Alpha or 0
@@ -37,36 +33,29 @@ local function CreateFrame(props)
     if props.Parent then f.Parent = props.Parent end
     return f
 end
-
 local THEMES = {
     Proohio = {Bg=Color3.fromRGB(14,14,14), Header=Color3.fromRGB(10,10,10), Sidebar=Color3.fromRGB(10,10,10), El=Color3.fromRGB(22,22,22), Text=Color3.fromRGB(255,255,255), Sub=Color3.fromRGB(136,136,136), Muted=Color3.fromRGB(51,51,51)},
     Dark = {Bg=Color3.fromRGB(5,5,5), Header=Color3.fromRGB(0,0,0), Sidebar=Color3.fromRGB(0,0,0), El=Color3.fromRGB(18,18,18), Text=Color3.fromRGB(255,255,255), Sub=Color3.fromRGB(100,100,100), Muted=Color3.fromRGB(40,40,40)},
     Light = {Bg=Color3.fromRGB(242,242,242), Header=Color3.fromRGB(228,228,228), Sidebar=Color3.fromRGB(228,228,228), El=Color3.fromRGB(255,255,255), Text=Color3.fromRGB(20,20,20), Sub=Color3.fromRGB(120,120,120), Muted=Color3.fromRGB(200,200,200)},
     Ocean = {Bg=Color3.fromRGB(18,22,40), Header=Color3.fromRGB(14,18,34), Sidebar=Color3.fromRGB(14,18,34), El=Color3.fromRGB(24,30,52), Text=Color3.fromRGB(210,210,255), Sub=Color3.fromRGB(100,110,180), Muted=Color3.fromRGB(50,55,100)}
 }
-
 local UI_NAME = "Proohio_Main"
 local ScreenGui, MainUI, FloatBtn, UIVisible, IsMobile, CurrentTheme
-
 local function DetectMobile()
     local vs = workspace.CurrentCamera.ViewportSize
     IsMobile = vs.X < 800 or UserInputService.TouchEnabled
 end
-
 local function GetSize()
     DetectMobile()
     local vs = workspace.CurrentCamera.ViewportSize
     return IsMobile and UDim2.new(0, vs.X*0.88, 0, vs.Y*0.65) or UDim2.new(0, 580, 0, 420)
 end
-
-local function GetTextSz() 
-    return IsMobile and 13 or 11 
+local function GetTextSz()
+    return IsMobile and 13 or 11
 end
-
-local function GetElH() 
-    return IsMobile and 46 or 40 
+local function GetElH()
+    return IsMobile and 46 or 40
 end
-
 function Proohio:ToggleUI()
     UIVisible = not UIVisible
     if MainUI then
@@ -74,35 +63,28 @@ function Proohio:ToggleUI()
         Tween(MainUI, {Size = UIVisible and GetSize() or UDim2.new(0,0,0,0)}, 0.25, Enum.EasingStyle.Back)
     end
 end
-
 function Proohio.CreateLib(name, theme)
     CurrentTheme = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
     name = name or "Proohio UI"
-    
     for _,v in ipairs(game.CoreGui:GetChildren()) do
         if v.Name == UI_NAME then v:Destroy() end
     end
-    
     if gethui then
         local hui = gethui()
         for _,v in ipairs(hui:GetChildren()) do
             if v.Name == UI_NAME then v:Destroy() end
         end
     end
-    
     local parentGui = (gethui and gethui()) or game.CoreGui
-    
     ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = UI_NAME
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
     ScreenGui.Parent = parentGui
     ScreenGui.DisplayOrder = 100
-
     FloatBtn = CreateFrame({Color=CurrentTheme.Header, Size=UDim2.new(0,48,0,48), Pos=UDim2.new(0.5,-24,0.5,-24), Parent=ScreenGui, Z=1000})
     Corner(FloatBtn,12)
     Stroke(FloatBtn, CurrentTheme.Sub, 0.8, 2)
-    
     local Icon = Instance.new("ImageLabel")
     Icon.Parent = FloatBtn
     Icon.BackgroundTransparency = 1
@@ -111,50 +93,53 @@ function Proohio.CreateLib(name, theme)
     Icon.Image = "rbxassetid://74489035156742"
     Icon.ScaleType = Enum.ScaleType.Crop
     Icon.ZIndex = 1001
-
     local FloatBtnClick = Instance.new("TextButton")
     FloatBtnClick.BackgroundTransparency = 1
     FloatBtnClick.Size = UDim2.new(1,0,1,0)
     FloatBtnClick.Text = ""
+    FloatBtnClick.ZIndex = 1002
     FloatBtnClick.Parent = FloatBtn
-    FloatBtnClick.MouseButton1Click:Connect(function() Proohio:ToggleUI() end)
-
     local dragging = false
-    local dragInput, dragStart, startPos
-
-    FloatBtn.InputBegan:Connect(function(input)
+    local dragInput, dragStart, startPos, dragged
+    FloatBtnClick.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
+            dragged = false
             dragStart = input.Position
             startPos = FloatBtn.Position
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
             end)
         end
     end)
-
-    FloatBtn.InputChanged:Connect(function(input)
+    FloatBtnClick.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
+            if math.abs(delta.X) > 3 or math.abs(delta.Y) > 3 then
+                dragged = true
+            end
             FloatBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-
+    FloatBtnClick.MouseButton1Click:Connect(function()
+        if not dragged then
+            Proohio:ToggleUI()
+        end
+    end)
     MainUI = CreateFrame({Color=CurrentTheme.Bg, Size=UDim2.new(0,0,0,0), Pos=UDim2.new(0.5,-290,0.5,-210), Clip=true, Parent=ScreenGui})
     MainUI.Visible = false
     Corner(MainUI,12)
     local mS=Stroke(MainUI,Color3.fromRGB(255,255,255),1)
     Tween(mS,{Transparency=0.9},0.4)
-
     local TitleBar = CreateFrame({Color=CurrentTheme.Header, Size=UDim2.new(1,0,0,38), Z=2, Parent=MainUI})
     Corner(TitleBar,12)
-    
     local Title = Instance.new("TextLabel")
     Title.BackgroundTransparency=1
     Title.Position=UDim2.new(0,16,0,0)
@@ -166,10 +151,8 @@ function Proohio.CreateLib(name, theme)
     Title.TextXAlignment=Enum.TextXAlignment.Left
     Title.ZIndex=2
     Title.Parent=TitleBar
-
     local uiDragging = false
     local uiDragInput, uiDragStart, uiStartPos
-
     TitleBar.InputBegan:Connect(function(input)
         if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
             uiDragging=true
@@ -180,21 +163,17 @@ function Proohio.CreateLib(name, theme)
             end)
         end
     end)
-
     TitleBar.InputChanged:Connect(function(input)
         if input.UserInputType==Enum.UserInputType.MouseMovement then uiDragInput=input end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if input==uiDragInput and uiDragging then
             local delta=input.Position-uiDragStart
             MainUI.Position=UDim2.new(uiStartPos.X.Scale,uiStartPos.X.Offset+delta.X,uiStartPos.Y.Scale,uiStartPos.Y.Offset+delta.Y)
         end
     end)
-
     local Sidebar = CreateFrame({Color=CurrentTheme.Sidebar, Size=UDim2.new(0,130,1,-38), Pos=UDim2.new(0,0,0,38), Parent=MainUI})
     Corner(Sidebar,12)
-
     local TabScroll = Instance.new("ScrollingFrame")
     TabScroll.BackgroundTransparency=1
     TabScroll.BorderSizePixel=0
@@ -202,36 +181,29 @@ function Proohio.CreateLib(name, theme)
     TabScroll.ScrollBarThickness=0
     TabScroll.CanvasSize=UDim2.new(0,0,0,0)
     TabScroll.Parent=Sidebar
-
     local TabLL = Instance.new("UIListLayout")
     TabLL.SortOrder=Enum.SortOrder.LayoutOrder
     TabLL.Padding=UDim.new(0,3)
     TabLL.Parent=TabScroll
-
     local TabPad = Instance.new("UIPadding")
     TabPad.PaddingTop=UDim.new(0,6)
     TabPad.PaddingLeft=UDim.new(0,8)
     TabPad.PaddingRight=UDim.new(0,8)
     TabPad.Parent=TabScroll
-
     TabLL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         TabScroll.CanvasSize=UDim2.new(0,0,0,TabLL.AbsoluteContentSize.Y+12)
     end)
-
     local Profile = CreateFrame({Color=CurrentTheme.Sidebar, Alpha=0, Size=UDim2.new(1,0,0,54), Pos=UDim2.new(0,0,1,-54), Parent=Sidebar})
     Corner(Profile,12)
-
     local AvHolder = CreateFrame({Color=Color3.fromRGB(26,26,26), Size=UDim2.new(0,30,0,30), Pos=UDim2.new(0,10,0.5,-15), Parent=Profile})
     Corner(AvHolder,100)
     Stroke(AvHolder,Color3.fromRGB(255,255,255),0.9)
-
     local AvImg = Instance.new("ImageLabel")
     AvImg.BackgroundTransparency=1
     AvImg.Size=UDim2.new(1,0,1,0)
     AvImg.ScaleType=Enum.ScaleType.Crop
     AvImg.Parent=AvHolder
     Corner(AvImg,100)
-
     local DispName = Instance.new("TextLabel")
     DispName.BackgroundTransparency=1
     DispName.Position=UDim2.new(0,46,0,10)
@@ -243,7 +215,6 @@ function Proohio.CreateLib(name, theme)
     DispName.TextXAlignment=Enum.TextXAlignment.Left
     DispName.TextTruncate=Enum.TextTruncate.AtEnd
     DispName.Parent=Profile
-
     local UserName = Instance.new("TextLabel")
     UserName.BackgroundTransparency=1
     UserName.Position=UDim2.new(0,46,0,26)
@@ -255,10 +226,8 @@ function Proohio.CreateLib(name, theme)
     UserName.TextXAlignment=Enum.TextXAlignment.Left
     UserName.TextTruncate=Enum.TextTruncate.AtEnd
     UserName.Parent=Profile
-
     local Status = CreateFrame({Color=Color3.fromRGB(34,197,94), Size=UDim2.new(0,5,0,5), Pos=UDim2.new(1,-18,0.5,-2.5), Parent=Profile})
     Corner(Status,100)
-
     local lp = Players.LocalPlayer
     DispName.Text = lp.DisplayName
     UserName.Text = "@"..lp.Name
@@ -266,20 +235,16 @@ function Proohio.CreateLib(name, theme)
         local img = Players:GetUserThumbnailAsync(lp.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size48x48)
         AvImg.Image = img
     end)
-
     local Content = CreateFrame({Alpha=1, Size=UDim2.new(1,-130,1,-38), Pos=UDim2.new(0,130,0,38), Parent=MainUI})
     Corner(Content,12)
     Content.ClipsDescendants=true
-
     local Pages = Instance.new("Folder")
     Pages.Parent=Content
     local Tabs, allTabs, first = {}, {}, true
-
     function Tabs:NewTab(tabName)
         tabName = tabName or "Tab"
         local isFirst = first
         first = false
-
         local TabBtn = Instance.new("TextButton")
         TabBtn.BackgroundColor3=Color3.fromRGB(255,255,255)
         TabBtn.BackgroundTransparency=isFirst and 0.9 or 1
@@ -294,7 +259,6 @@ function Proohio.CreateLib(name, theme)
         TabBtn.Parent=TabScroll
         Corner(TabBtn,6)
         local tS=Stroke(TabBtn,Color3.fromRGB(255,255,255),isFirst and 0.9 or 1)
-
         local Page = Instance.new("ScrollingFrame")
         Page.BackgroundTransparency=1
         Page.BorderSizePixel=0
@@ -305,24 +269,19 @@ function Proohio.CreateLib(name, theme)
         Page.CanvasSize=UDim2.new(0,0,0,0)
         Page.Visible=isFirst
         Page.Parent=Content
-
         local PageLL = Instance.new("UIListLayout")
         PageLL.SortOrder=Enum.SortOrder.LayoutOrder
         PageLL.Padding=UDim.new(0,10)
         PageLL.Parent=Page
-
         local PagePad = Instance.new("UIPadding")
         PagePad.PaddingTop=UDim.new(0,10)
         PagePad.PaddingLeft=UDim.new(0,10)
         PagePad.PaddingRight=UDim.new(0,10)
         PagePad.PaddingBottom=UDim.new(0,10)
         PagePad.Parent=Page
-
         local function Refresh() Page.CanvasSize=UDim2.new(0,0,0,PageLL.AbsoluteContentSize.Y+20) end
         PageLL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(Refresh)
-
         table.insert(allTabs, {btn=TabBtn, stroke=tS, page=Page})
-
         TabBtn.MouseButton1Click:Connect(function()
             for _,d in ipairs(allTabs) do
                 d.page.Visible=false
@@ -334,7 +293,6 @@ function Proohio.CreateLib(name, theme)
             Tween(tS,{Transparency=0.9},0.15)
             Refresh()
         end)
-
         local Sections = {}
         function Sections:NewSection(secName, hidden)
             secName = secName or "Section"
@@ -344,7 +302,6 @@ function Proohio.CreateLib(name, theme)
             SecLL.SortOrder=Enum.SortOrder.LayoutOrder
             SecLL.Padding=UDim.new(0,5)
             SecLL.Parent=SecF
-
             if not hidden then
                 local SecT = Instance.new("TextLabel")
                 SecT.BackgroundTransparency=1
@@ -357,13 +314,11 @@ function Proohio.CreateLib(name, theme)
                 SecT.TextXAlignment=Enum.TextXAlignment.Left
                 SecT.Parent=SecF
             end
-
             local Hold = CreateFrame({Alpha=1, Size=UDim2.new(1,0,0,0), Parent=SecF})
             local HoldLL = Instance.new("UIListLayout")
             HoldLL.SortOrder=Enum.SortOrder.LayoutOrder
             HoldLL.Padding=UDim.new(0,5)
             HoldLL.Parent=Hold
-
             local function Resize()
                 Hold.Size=UDim2.new(1,0,0,HoldLL.AbsoluteContentSize.Y)
                 SecF.Size=UDim2.new(1,0,0,SecLL.AbsoluteContentSize.Y)
@@ -371,14 +326,12 @@ function Proohio.CreateLib(name, theme)
             end
             HoldLL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(Resize)
             SecLL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(Resize)
-
             local function El(h)
                 local f=CreateFrame({Color=CurrentTheme.El, Size=UDim2.new(1,0,0,h or GetElH()), Parent=Hold})
                 Corner(f,10)
                 local s=Stroke(f,Color3.fromRGB(255,255,255),0.92)
                 return f,s
             end
-
             local Elements = {}
             function Elements:NewButton(n,_,cb)
                 n=n or "Button"
@@ -415,7 +368,6 @@ function Proohio.CreateLib(name, theme)
                 function F:UpdateButton(t) L.Text=t end
                 return F
             end
-            
             function Elements:NewToggle(n,_,cb)
                 n=n or "Toggle"
                 cb=cb or function() end
@@ -456,7 +408,6 @@ function Proohio.CreateLib(name, theme)
                 function F:UpdateToggle(nt,st) if nt then L.Text=nt end if st~=nil then Set(st) cb(on) end end
                 return F
             end
-            
             function Elements:NewSlider(n,_,mx,mn,cb)
                 n=n or "Slider"
                 mx=mx or 100
@@ -518,7 +469,6 @@ function Proohio.CreateLib(name, theme)
                 f.MouseLeave:Connect(function() Tween(s,{Transparency=0.92},0.08) Tween(L,{TextColor3=CurrentTheme.Sub},0.08) end)
                 Resize()
             end
-            
             function Elements:NewTextBox(n,_,cb)
                 n=n or "TextBox"
                 cb=cb or function() end
@@ -556,7 +506,6 @@ function Proohio.CreateLib(name, theme)
                 f.MouseLeave:Connect(function() Tween(s,{Transparency=0.92},0.08) end)
                 Resize()
             end
-            
             function Elements:NewLabel(t)
                 t=t or "Label"
                 local f=CreateFrame({Color=Color3.fromRGB(17,17,17), Size=UDim2.new(1,0,0,32), Parent=Hold})
@@ -577,7 +526,6 @@ function Proohio.CreateLib(name, theme)
                 function F:UpdateLabel(nt) L.Text=nt end
                 return F
             end
-            
             function Elements:NewDropdown(n,_,lst,cb)
                 n=n or "Dropdown"
                 lst=lst or {}
@@ -615,7 +563,7 @@ function Proohio.CreateLib(name, theme)
                 HBtn.AutoButtonColor=false
                 HBtn.ZIndex=2
                 HBtn.Parent=Head
-                local OB=CreateFrame({Color=Color3.fromRGB(17,17,17), Size=UDim2.new(1,0,0,0), Clip=true, Parent=Wrap})
+                local OB=CreateFrame({Color=Color3.fromRGB(17,17,17), Size=UDim2.new(1,0,0,0), Pos=UDim2.new(0,0,0,GetElH()+4), Clip=true, Parent=Wrap})
                 Corner(OB,10)
                 Stroke(OB,Color3.fromRGB(255,255,255),0.88)
                 local OLL=Instance.new("UIListLayout")
@@ -673,5 +621,4 @@ function Proohio.CreateLib(name, theme)
     end
     return Tabs
 end
-
 return Proohio
