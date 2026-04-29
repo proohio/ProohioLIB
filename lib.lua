@@ -1,10 +1,11 @@
+--// Proohio UI Library - FINAL FIXED VERSION
+--// GitHub: https://github.com/proohio/ProohioLIB
+
 local Proohio = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-
-local UI_NAME = "Proohio_Main" 
 
 local function Tween(obj, props, dur, style, dir)
     TweenService:Create(obj, TweenInfo.new(dur or 0.15, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props):Play()
@@ -47,6 +48,7 @@ local THEMES = {
     Ocean = {Bg=Color3.fromRGB(18,22,40), Header=Color3.fromRGB(14,18,34), Sidebar=Color3.fromRGB(14,18,34), El=Color3.fromRGB(24,30,52), Text=Color3.fromRGB(210,210,255), Sub=Color3.fromRGB(100,110,180), Muted=Color3.fromRGB(50,55,100)}
 }
 
+local UI_NAME = "Proohio_Main"
 local ScreenGui, MainUI, FloatBtn, UIVisible, IsMobile, T
 
 local function DetectMobile()
@@ -80,25 +82,34 @@ function Proohio.CreateLib(name, theme)
     T = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
     name = name or "Proohio UI"
     
-    -- FIXED: Destroy OLD UI by looking for the specific static name
+    -- FIXED: Destroy old UI from BOTH CoreGui AND gethui()
     for _,v in ipairs(game.CoreGui:GetChildren()) do
         if v.Name == UI_NAME then
             v:Destroy()
         end
     end
     
-    -- Use gethui() if available, otherwise use CoreGui
-    local parentGui = gethui and gethui() or game.CoreGui
+    -- Also check gethui() if it exists
+    if gethui then
+        local hui = gethui()
+        for _,v in ipairs(hui:GetChildren()) do
+            if v.Name == UI_NAME then
+                v:Destroy()
+            end
+        end
+    end
+    
+    local parentGui = (gethui and gethui()) or game.CoreGui
     
     ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = UI_NAME -- Use the static name
+    ScreenGui.Name = UI_NAME
     ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
     ScreenGui.ResetOnSpawn = false
     ScreenGui.Parent = parentGui
     ScreenGui.DisplayOrder = 100
 
-    -- Floating Toggle Button
-    FloatBtn = CreateFrame({Color=T.Header, Size=UDim2.new(0,42,0,42), Pos=UDim2.new(1,-52,1,-52), Parent=ScreenGui, Z=1000})
+    -- FIXED: Floating button starts in CENTER of screen
+    FloatBtn = CreateFrame({Color=T.Header, Size=UDim2.new(0,42,0,42), Pos=UDim2.new(0.5,-21,0.5,-21), Parent=ScreenGui, Z=1000})
     Corner(FloatBtn,100)
     Stroke(FloatBtn, Color3.fromRGB(255,255,255), 0.9)
     
@@ -120,37 +131,41 @@ function Proohio.CreateLib(name, theme)
         Proohio:ToggleUI() 
     end)
     
-    -- Drag FloatBtn
+    -- FIXED: Drag functionality for float button
     do 
-        local drag,ds,dp
-        FloatBtn.InputBegan:Connect(function(i)
-            if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-                drag=true 
-                ds=i.Position 
-                dp=FloatBtn.Position
-                i.Changed:Connect(function() 
-                    if i.UserInputState==Enum.UserInputState.End then 
-                        drag=false 
-                    end 
+        local drag,dragInput,dragStart,startPos
+        FloatBtn.InputBegan:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+                drag = true
+                dragStart = input.Position
+                startPos = FloatBtn.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState==Enum.UserInputState.End then
+                        drag = false
+                    end
                 end)
             end
         end)
-        UserInputService.InputChanged:Connect(function(i)
-            if drag and (i.UserInputType==Enum.UserInputType.MouseMovement or i.UserInputType==Enum.UserInputType.Touch) then
-                local d=i.Position-ds
-                FloatBtn.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y)
+        FloatBtn.InputChanged:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if input==dragInput and drag then
+                local delta = input.Position - dragStart
+                FloatBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
             end
         end)
     end
 
-    -- Main UI
+    -- Main UI starts in center
     MainUI = CreateFrame({Color=T.Bg, Size=UDim2.new(0,0,0,0), Pos=UDim2.new(0.5,-290,0.5,-210), Clip=true, Parent=ScreenGui})
     MainUI.Visible = false
     Corner(MainUI,12)
     local mS=Stroke(MainUI,Color3.fromRGB(255,255,255),1)
     Tween(mS,{Transparency=0.9},0.4)
 
-    -- Title Bar
     local TitleBar = CreateFrame({Color=T.Header, Size=UDim2.new(1,0,0,38), Z=2, Parent=MainUI})
     Corner(TitleBar,12)
     
@@ -168,28 +183,32 @@ function Proohio.CreateLib(name, theme)
 
     -- Drag MainUI
     do 
-        local drag,ds,dp
-        TitleBar.InputBegan:Connect(function(i)
-            if i.UserInputType==Enum.UserInputType.MouseButton1 or i.UserInputType==Enum.UserInputType.Touch then
-                drag=true 
-                ds=i.Position 
-                dp=MainUI.Position
-                i.Changed:Connect(function() 
-                    if i.UserInputState==Enum.UserInputState.End then 
-                        drag=false 
-                    end 
+        local drag,dragInput,dragStart,startPos
+        TitleBar.InputBegan:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+                drag=true
+                dragStart=input.Position
+                startPos=MainUI.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState==Enum.UserInputState.End then
+                        drag=false
+                    end
                 end)
             end
         end)
-        UserInputService.InputChanged:Connect(function(i)
-            if drag and i.UserInputType==Enum.UserInputType.MouseMovement then
-                local d=i.Position-ds
-                MainUI.Position=UDim2.new(dp.X.Scale,dp.X.Offset+d.X,dp.Y.Scale,dp.Y.Offset+d.Y)
+        TitleBar.InputChanged:Connect(function(input)
+            if input.UserInputType==Enum.UserInputType.MouseMovement then
+                dragInput=input
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if input==dragInput and drag then
+                local delta=input.Position-dragStart
+                MainUI.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
             end
         end)
     end
 
-    -- Sidebar
     local Sidebar = CreateFrame({Color=T.Sidebar, Size=UDim2.new(0,130,1,-38), Pos=UDim2.new(0,0,0,38), Parent=MainUI})
     Corner(Sidebar,12)
 
@@ -216,7 +235,6 @@ function Proohio.CreateLib(name, theme)
         TabScroll.CanvasSize=UDim2.new(0,0,0,TabLL.AbsoluteContentSize.Y+12)
     end)
 
-    -- Profile Section
     local Profile = CreateFrame({Color=T.Sidebar, Alpha=0, Size=UDim2.new(1,0,0,54), Pos=UDim2.new(0,0,1,-54), Parent=Sidebar})
     Corner(Profile,12)
 
@@ -266,7 +284,6 @@ function Proohio.CreateLib(name, theme)
         AvImg.Image = img
     end)
 
-    -- Content Area
     local Content = CreateFrame({Alpha=1, Size=UDim2.new(1,-130,1,-38), Pos=UDim2.new(0,130,0,38), Parent=MainUI})
     Corner(Content,12)
     Content.ClipsDescendants=true
