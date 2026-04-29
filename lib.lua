@@ -79,10 +79,11 @@ function Proohio.CreateLib(name, theme)
     T = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
     name = name or "Proohio UI"
     
-    for _,v in ipairs(game.CoreGui:GetChildren()) do 
-        if v.Name==LibID then 
-            v:Destroy() 
-        end 
+    -- Destroy old UI instances
+    for _,v in ipairs(game.CoreGui:GetChildren()) do
+        if v.Name == LibID then
+            v:Destroy()
+        end
     end
     
     -- Use gethui() if available, otherwise use CoreGui
