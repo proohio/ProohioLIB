@@ -2,7 +2,7 @@ local Proohio = {}
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
 
 local function Tween(obj, props, dur, style, dir)
     TweenService:Create(obj, TweenInfo.new(dur or 0.15, style or Enum.EasingStyle.Quint, dir or Enum.EasingDirection.Out), props):Play()
@@ -46,7 +46,7 @@ local THEMES = {
 }
 
 local UI_NAME = "Proohio_Main"
-local ScreenGui, MainUI, FloatBtn, UIVisible, IsMobile, T
+local ScreenGui, MainUI, FloatBtn, UIVisible, IsMobile, CurrentTheme
 
 local function DetectMobile()
     local vs = workspace.CurrentCamera.ViewportSize
@@ -76,21 +76,17 @@ function Proohio:ToggleUI()
 end
 
 function Proohio.CreateLib(name, theme)
-    T = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
+    CurrentTheme = type(theme)=="string" and THEMES[theme] or type(theme)=="table" and theme or THEMES.Proohio
     name = name or "Proohio UI"
     
     for _,v in ipairs(game.CoreGui:GetChildren()) do
-        if v.Name == UI_NAME then
-            v:Destroy()
-        end
+        if v.Name == UI_NAME then v:Destroy() end
     end
     
     if gethui then
         local hui = gethui()
         for _,v in ipairs(hui:GetChildren()) do
-            if v.Name == UI_NAME then
-                v:Destroy()
-            end
+            if v.Name == UI_NAME then v:Destroy() end
         end
     end
     
@@ -103,9 +99,9 @@ function Proohio.CreateLib(name, theme)
     ScreenGui.Parent = parentGui
     ScreenGui.DisplayOrder = 100
 
-    FloatBtn = CreateFrame({Color=T.Header, Size=UDim2.new(0,48,0,48), Pos=UDim2.new(0.5,-24,0.5,-24), Parent=ScreenGui, Z=1000})
+    FloatBtn = CreateFrame({Color=CurrentTheme.Header, Size=UDim2.new(0,48,0,48), Pos=UDim2.new(0.5,-24,0.5,-24), Parent=ScreenGui, Z=1000})
     Corner(FloatBtn,12)
-    Stroke(FloatBtn, T.Sub, 0.8, 2)
+    Stroke(FloatBtn, CurrentTheme.Sub, 0.8, 2)
     
     local Icon = Instance.new("ImageLabel")
     Icon.Parent = FloatBtn
@@ -121,44 +117,42 @@ function Proohio.CreateLib(name, theme)
     FloatBtnClick.Size = UDim2.new(1,0,1,0)
     FloatBtnClick.Text = ""
     FloatBtnClick.Parent = FloatBtn
-    FloatBtnClick.MouseButton1Click:Connect(function() 
-        Proohio:ToggleUI() 
-    end)
-    
-    do 
-        local drag,dragInput,dragStart,startPos
-        FloatBtn.InputBegan:Connect(function(input)
-            if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-                drag = true
-                dragStart = input.Position
-                startPos = FloatBtn.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState==Enum.UserInputState.End then
-                        drag = false
-                    end
-                end)
-            end
-        end)
-        FloatBtn.InputChanged:Connect(function(input)
-            if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then
-                dragInput = input
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if input==dragInput and drag then
-                local delta = input.Position - dragStart
-                FloatBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end)
-    end
+    FloatBtnClick.MouseButton1Click:Connect(function() Proohio:ToggleUI() end)
 
-    MainUI = CreateFrame({Color=T.Bg, Size=UDim2.new(0,0,0,0), Pos=UDim2.new(0.5,-290,0.5,-210), Clip=true, Parent=ScreenGui})
+    local dragging = false
+    local dragInput, dragStart, startPos
+
+    FloatBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = FloatBtn.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+
+    FloatBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            FloatBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    MainUI = CreateFrame({Color=CurrentTheme.Bg, Size=UDim2.new(0,0,0,0), Pos=UDim2.new(0.5,-290,0.5,-210), Clip=true, Parent=ScreenGui})
     MainUI.Visible = false
     Corner(MainUI,12)
     local mS=Stroke(MainUI,Color3.fromRGB(255,255,255),1)
     Tween(mS,{Transparency=0.9},0.4)
 
-    local TitleBar = CreateFrame({Color=T.Header, Size=UDim2.new(1,0,0,38), Z=2, Parent=MainUI})
+    local TitleBar = CreateFrame({Color=CurrentTheme.Header, Size=UDim2.new(1,0,0,38), Z=2, Parent=MainUI})
     Corner(TitleBar,12)
     
     local Title = Instance.new("TextLabel")
@@ -167,40 +161,38 @@ function Proohio.CreateLib(name, theme)
     Title.Size=UDim2.new(1,-32,1,0)
     Title.Font=Enum.Font.GothamBold
     Title.Text=name
-    Title.TextColor3=T.Sub
+    Title.TextColor3=CurrentTheme.Sub
     Title.TextSize=GetTextSz()
     Title.TextXAlignment=Enum.TextXAlignment.Left
     Title.ZIndex=2
     Title.Parent=TitleBar
 
-    do 
-        local drag,dragInput,dragStart,startPos
-        TitleBar.InputBegan:Connect(function(input)
-            if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
-                drag=true
-                dragStart=input.Position
-                startPos=MainUI.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState==Enum.UserInputState.End then
-                        drag=false
-                    end
-                end)
-            end
-        end)
-        TitleBar.InputChanged:Connect(function(input)
-            if input.UserInputType==Enum.UserInputType.MouseMovement then
-                dragInput=input
-            end
-        end)
-        UserInputService.InputChanged:Connect(function(input)
-            if input==dragInput and drag then
-                local delta=input.Position-dragStart
-                MainUI.Position=UDim2.new(startPos.X.Scale,startPos.X.Offset+delta.X,startPos.Y.Scale,startPos.Y.Offset+delta.Y)
-            end
-        end)
-    end
+    local uiDragging = false
+    local uiDragInput, uiDragStart, uiStartPos
 
-    local Sidebar = CreateFrame({Color=T.Sidebar, Size=UDim2.new(0,130,1,-38), Pos=UDim2.new(0,0,0,38), Parent=MainUI})
+    TitleBar.InputBegan:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then
+            uiDragging=true
+            uiDragStart=input.Position
+            uiStartPos=MainUI.Position
+            input.Changed:Connect(function()
+                if input.UserInputState==Enum.UserInputState.End then uiDragging=false end
+            end)
+        end
+    end)
+
+    TitleBar.InputChanged:Connect(function(input)
+        if input.UserInputType==Enum.UserInputType.MouseMovement then uiDragInput=input end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input==uiDragInput and uiDragging then
+            local delta=input.Position-uiDragStart
+            MainUI.Position=UDim2.new(uiStartPos.X.Scale,uiStartPos.X.Offset+delta.X,uiStartPos.Y.Scale,uiStartPos.Y.Offset+delta.Y)
+        end
+    end)
+
+    local Sidebar = CreateFrame({Color=CurrentTheme.Sidebar, Size=UDim2.new(0,130,1,-38), Pos=UDim2.new(0,0,0,38), Parent=MainUI})
     Corner(Sidebar,12)
 
     local TabScroll = Instance.new("ScrollingFrame")
@@ -226,7 +218,7 @@ function Proohio.CreateLib(name, theme)
         TabScroll.CanvasSize=UDim2.new(0,0,0,TabLL.AbsoluteContentSize.Y+12)
     end)
 
-    local Profile = CreateFrame({Color=T.Sidebar, Alpha=0, Size=UDim2.new(1,0,0,54), Pos=UDim2.new(0,0,1,-54), Parent=Sidebar})
+    local Profile = CreateFrame({Color=CurrentTheme.Sidebar, Alpha=0, Size=UDim2.new(1,0,0,54), Pos=UDim2.new(0,0,1,-54), Parent=Sidebar})
     Corner(Profile,12)
 
     local AvHolder = CreateFrame({Color=Color3.fromRGB(26,26,26), Size=UDim2.new(0,30,0,30), Pos=UDim2.new(0,10,0.5,-15), Parent=Profile})
@@ -296,7 +288,7 @@ function Proohio.CreateLib(name, theme)
         TabBtn.AutoButtonColor=false
         TabBtn.Font=Enum.Font.GothamMedium
         TabBtn.Text=tabName
-        TabBtn.TextColor3=isFirst and T.Text or T.Sub
+        TabBtn.TextColor3=isFirst and CurrentTheme.Text or CurrentTheme.Sub
         TabBtn.TextSize=GetTextSz()
         TabBtn.ZIndex=2
         TabBtn.Parent=TabScroll
@@ -326,9 +318,7 @@ function Proohio.CreateLib(name, theme)
         PagePad.PaddingBottom=UDim.new(0,10)
         PagePad.Parent=Page
 
-        local function Refresh() 
-            Page.CanvasSize=UDim2.new(0,0,0,PageLL.AbsoluteContentSize.Y+20) 
-        end
+        local function Refresh() Page.CanvasSize=UDim2.new(0,0,0,PageLL.AbsoluteContentSize.Y+20) end
         PageLL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(Refresh)
 
         table.insert(allTabs, {btn=TabBtn, stroke=tS, page=Page})
@@ -336,11 +326,11 @@ function Proohio.CreateLib(name, theme)
         TabBtn.MouseButton1Click:Connect(function()
             for _,d in ipairs(allTabs) do
                 d.page.Visible=false
-                Tween(d.btn,{BackgroundTransparency=1,TextColor3=T.Sub},0.12)
+                Tween(d.btn,{BackgroundTransparency=1,TextColor3=CurrentTheme.Sub},0.12)
                 Tween(d.stroke,{Transparency=1},0.12)
             end
             Page.Visible=true
-            Tween(TabBtn,{BackgroundTransparency=0.9,TextColor3=T.Text},0.15)
+            Tween(TabBtn,{BackgroundTransparency=0.9,TextColor3=CurrentTheme.Text},0.15)
             Tween(tS,{Transparency=0.9},0.15)
             Refresh()
         end)
@@ -362,7 +352,7 @@ function Proohio.CreateLib(name, theme)
                 SecT.Size=UDim2.new(0,0,0,16)
                 SecT.Font=Enum.Font.GothamBold
                 SecT.Text=string.upper(secName)
-                SecT.TextColor3=T.Muted
+                SecT.TextColor3=CurrentTheme.Muted
                 SecT.TextSize=9
                 SecT.TextXAlignment=Enum.TextXAlignment.Left
                 SecT.Parent=SecF
@@ -383,7 +373,7 @@ function Proohio.CreateLib(name, theme)
             SecLL:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(Resize)
 
             local function El(h)
-                local f=CreateFrame({Color=T.El, Size=UDim2.new(1,0,0,h or GetElH()), Parent=Hold})
+                local f=CreateFrame({Color=CurrentTheme.El, Size=UDim2.new(1,0,0,h or GetElH()), Parent=Hold})
                 Corner(f,10)
                 local s=Stroke(f,Color3.fromRGB(255,255,255),0.92)
                 return f,s
@@ -400,7 +390,7 @@ function Proohio.CreateLib(name, theme)
                 L.Size=UDim2.new(1,-24,1,0)
                 L.Font=Enum.Font.GothamMedium
                 L.Text=n
-                L.TextColor3=T.Sub
+                L.TextColor3=CurrentTheme.Sub
                 L.TextSize=GetTextSz()
                 L.TextXAlignment=Enum.TextXAlignment.Left
                 L.Parent=f
@@ -415,20 +405,11 @@ function Proohio.CreateLib(name, theme)
                 Hit.MouseButton1Click:Connect(function()
                     Tween(f,{BackgroundColor3=Color3.fromRGB(255,255,255)},0.06)
                     Tween(L,{TextColor3=Color3.fromRGB(0,0,0)},0.06)
-                    task.delay(0.12,function() 
-                        Tween(f,{BackgroundColor3=T.El},0.12)
-                        Tween(L,{TextColor3=T.Sub},0.12) 
-                    end)
+                    task.delay(0.12,function() Tween(f,{BackgroundColor3=CurrentTheme.El},0.12) Tween(L,{TextColor3=CurrentTheme.Sub},0.12) end)
                     cb()
                 end)
-                Hit.MouseEnter:Connect(function() 
-                    Tween(s,{Transparency=0.85},0.08)
-                    Tween(L,{TextColor3=Color3.fromRGB(200,200,200)},0.08) 
-                end)
-                Hit.MouseLeave:Connect(function() 
-                    Tween(s,{Transparency=0.92},0.08)
-                    Tween(L,{TextColor3=T.Sub},0.08) 
-                end)
+                Hit.MouseEnter:Connect(function() Tween(s,{Transparency=0.85},0.08) Tween(L,{TextColor3=Color3.fromRGB(200,200,200)},0.08) end)
+                Hit.MouseLeave:Connect(function() Tween(s,{Transparency=0.92},0.08) Tween(L,{TextColor3=CurrentTheme.Sub},0.08) end)
                 Resize()
                 local F={}
                 function F:UpdateButton(t) L.Text=t end
@@ -446,7 +427,7 @@ function Proohio.CreateLib(name, theme)
                 L.Size=UDim2.new(1,-54,1,0)
                 L.Font=Enum.Font.GothamMedium
                 L.Text=n
-                L.TextColor3=T.Sub
+                L.TextColor3=CurrentTheme.Sub
                 L.TextSize=GetTextSz()
                 L.TextXAlignment=Enum.TextXAlignment.Left
                 L.Parent=f
@@ -464,32 +445,15 @@ function Proohio.CreateLib(name, theme)
                 Hit.Parent=f
                 local function Set(st)
                     on=st
-                    if on then 
-                        Tween(Pill,{BackgroundColor3=Color3.fromRGB(255,255,255)},0.15)
-                        Tween(Circ,{Position=UDim2.new(1,-17,0.5,-7),BackgroundColor3=Color3.fromRGB(17,17,17)},0.15)
-                    else 
-                        Tween(Pill,{BackgroundColor3=Color3.fromRGB(42,42,42)},0.15)
-                        Tween(Circ,{Position=UDim2.new(0,3,0.5,-7),BackgroundColor3=Color3.fromRGB(85,85,85)},0.15) 
-                    end
+                    if on then Tween(Pill,{BackgroundColor3=Color3.fromRGB(255,255,255)},0.15) Tween(Circ,{Position=UDim2.new(1,-17,0.5,-7),BackgroundColor3=Color3.fromRGB(17,17,17)},0.15)
+                    else Tween(Pill,{BackgroundColor3=Color3.fromRGB(42,42,42)},0.15) Tween(Circ,{Position=UDim2.new(0,3,0.5,-7),BackgroundColor3=Color3.fromRGB(85,85,85)},0.15) end
                 end
-                Hit.MouseButton1Click:Connect(function() 
-                    Set(not on)
-                    cb(on) 
-                end)
-                Hit.MouseEnter:Connect(function() 
-                    Tween(s,{Transparency=0.85},0.08)
-                    Tween(L,{TextColor3=Color3.fromRGB(200,200,200)},0.08) 
-                end)
-                Hit.MouseLeave:Connect(function() 
-                    Tween(s,{Transparency=0.92},0.08)
-                    Tween(L,{TextColor3=T.Sub},0.08) 
-                end)
+                Hit.MouseButton1Click:Connect(function() Set(not on) cb(on) end)
+                Hit.MouseEnter:Connect(function() Tween(s,{Transparency=0.85},0.08) Tween(L,{TextColor3=Color3.fromRGB(200,200,200)},0.08) end)
+                Hit.MouseLeave:Connect(function() Tween(s,{Transparency=0.92},0.08) Tween(L,{TextColor3=CurrentTheme.Sub},0.08) end)
                 Resize()
                 local F={}
-                function F:UpdateToggle(nt,st) 
-                    if nt then L.Text=nt end
-                    if st~=nil then Set(st); cb(on) end 
-                end
+                function F:UpdateToggle(nt,st) if nt then L.Text=nt end if st~=nil then Set(st) cb(on) end end
                 return F
             end
             
@@ -505,7 +469,7 @@ function Proohio.CreateLib(name, theme)
                 L.Size=UDim2.new(1,-60,0,14)
                 L.Font=Enum.Font.GothamMedium
                 L.Text=n
-                L.TextColor3=T.Sub
+                L.TextColor3=CurrentTheme.Sub
                 L.TextSize=GetTextSz()
                 L.TextXAlignment=Enum.TextXAlignment.Left
                 L.Parent=f
@@ -517,7 +481,7 @@ function Proohio.CreateLib(name, theme)
                 VL.Size=UDim2.new(1,0,1,0)
                 VL.Font=Enum.Font.GothamBold
                 VL.Text=tostring(mn)
-                VL.TextColor3=T.Text
+                VL.TextColor3=CurrentTheme.Text
                 VL.TextSize=10
                 VL.Parent=VB
                 local Tr=CreateFrame({Color=Color3.fromRGB(255,255,255), Alpha=0.9, Size=UDim2.new(1,-24,0,4), Pos=UDim2.new(0,12,1,-14), Parent=f})
@@ -547,28 +511,11 @@ function Proohio.CreateLib(name, theme)
                     VL.Text=tostring(cv)
                     cb(cv)
                 end
-                HA.MouseButton1Down:Connect(function() 
-                    sl=true
-                    SetV(UserInputService:GetMouseLocation().X) 
-                end)
-                UserInputService.InputEnded:Connect(function(i) 
-                    if i.UserInputType==Enum.UserInputType.MouseButton1 then 
-                        sl=false 
-                    end 
-                end)
-                UserInputService.InputChanged:Connect(function(i) 
-                    if sl and i.UserInputType==Enum.UserInputType.MouseMovement then 
-                        SetV(i.Position.X) 
-                    end 
-                end)
-                f.MouseEnter:Connect(function() 
-                    Tween(s,{Transparency=0.85},0.08)
-                    Tween(L,{TextColor3=Color3.fromRGB(200,200,200)},0.08) 
-                end)
-                f.MouseLeave:Connect(function() 
-                    Tween(s,{Transparency=0.92},0.08)
-                    Tween(L,{TextColor3=T.Sub},0.08) 
-                end)
+                HA.MouseButton1Down:Connect(function() sl=true SetV(UserInputService:GetMouseLocation().X) end)
+                UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.MouseButton1 then sl=false end end)
+                UserInputService.InputChanged:Connect(function(i) if sl and i.UserInputType==Enum.UserInputType.MouseMovement then SetV(i.Position.X) end end)
+                f.MouseEnter:Connect(function() Tween(s,{Transparency=0.85},0.08) Tween(L,{TextColor3=Color3.fromRGB(200,200,200)},0.08) end)
+                f.MouseLeave:Connect(function() Tween(s,{Transparency=0.92},0.08) Tween(L,{TextColor3=CurrentTheme.Sub},0.08) end)
                 Resize()
             end
             
@@ -582,7 +529,7 @@ function Proohio.CreateLib(name, theme)
                 L.Size=UDim2.new(0,90,1,0)
                 L.Font=Enum.Font.GothamMedium
                 L.Text=n
-                L.TextColor3=T.Sub
+                L.TextColor3=CurrentTheme.Sub
                 L.TextSize=GetTextSz()
                 L.TextXAlignment=Enum.TextXAlignment.Left
                 L.Parent=f
@@ -598,26 +545,15 @@ function Proohio.CreateLib(name, theme)
                 Box.PlaceholderText="Enter..."
                 Box.PlaceholderColor3=Color3.fromRGB(68,68,68)
                 Box.Text=""
-                Box.TextColor3=T.Text
+                Box.TextColor3=CurrentTheme.Text
                 Box.TextSize=10
                 Box.TextXAlignment=Enum.TextXAlignment.Left
                 Box.ClearTextOnFocus=false
                 Box.Parent=IB
-                Box.Focused:Connect(function() 
-                    Tween(iS,{Transparency=0.78},0.08) 
-                end)
-                Box.FocusLost:Connect(function(en) 
-                    Tween(iS,{Transparency=0.9},0.08)
-                    if en then 
-                        cb(Box.Text) 
-                    end 
-                end)
-                f.MouseEnter:Connect(function() 
-                    Tween(s,{Transparency=0.85},0.08) 
-                end)
-                f.MouseLeave:Connect(function() 
-                    Tween(s,{Transparency=0.92},0.08) 
-                end)
+                Box.Focused:Connect(function() Tween(iS,{Transparency=0.78},0.08) end)
+                Box.FocusLost:Connect(function(en) Tween(iS,{Transparency=0.9},0.08) if en then cb(Box.Text) end end)
+                f.MouseEnter:Connect(function() Tween(s,{Transparency=0.85},0.08) end)
+                f.MouseLeave:Connect(function() Tween(s,{Transparency=0.92},0.08) end)
                 Resize()
             end
             
@@ -648,7 +584,7 @@ function Proohio.CreateLib(name, theme)
                 cb=cb or function() end
                 local op=false
                 local Wrap=CreateFrame({Alpha=1, Size=UDim2.new(1,0,0,GetElH()), Clip=true, Parent=Hold})
-                local Head=CreateFrame({Color=T.El, Size=UDim2.new(1,0,0,GetElH()), Parent=Wrap})
+                local Head=CreateFrame({Color=CurrentTheme.El, Size=UDim2.new(1,0,0,GetElH()), Parent=Wrap})
                 Corner(Head,10)
                 local hS=Stroke(Head,Color3.fromRGB(255,255,255),0.92)
                 local HL=Instance.new("TextLabel")
@@ -657,7 +593,7 @@ function Proohio.CreateLib(name, theme)
                 HL.Size=UDim2.new(1,-36,1,0)
                 HL.Font=Enum.Font.GothamMedium
                 HL.Text=n
-                HL.TextColor3=T.Sub
+                HL.TextColor3=CurrentTheme.Sub
                 HL.TextSize=GetTextSz()
                 HL.TextXAlignment=Enum.TextXAlignment.Left
                 HL.Parent=Head
@@ -686,11 +622,7 @@ function Proohio.CreateLib(name, theme)
                 OLL.SortOrder=Enum.SortOrder.LayoutOrder
                 OLL.Parent=OB
                 local function Build(ops)
-                    for _,c in ipairs(OB:GetChildren()) do 
-                        if c:IsA("TextButton") then 
-                            c:Destroy() 
-                        end 
-                    end
+                    for _,c in ipairs(OB:GetChildren()) do if c:IsA("TextButton") then c:Destroy() end end
                     for _,o in ipairs(ops) do
                         local Btn=Instance.new("TextButton")
                         Btn.BackgroundTransparency=1
@@ -715,47 +647,23 @@ function Proohio.CreateLib(name, theme)
                             Wrap.Size=UDim2.new(1,0,0,GetElH())
                             Resize()
                         end)
-                        Btn.MouseEnter:Connect(function() 
-                            Tween(Btn,{BackgroundTransparency=0.93,TextColor3=T.Text},0.08) 
-                        end)
-                        Btn.MouseLeave:Connect(function() 
-                            Tween(Btn,{BackgroundTransparency=1,TextColor3=Color3.fromRGB(102,102,102)},0.08) 
-                        end)
+                        Btn.MouseEnter:Connect(function() Tween(Btn,{BackgroundTransparency=0.93,TextColor3=CurrentTheme.Text},0.08) end)
+                        Btn.MouseLeave:Connect(function() Tween(Btn,{BackgroundTransparency=1,TextColor3=Color3.fromRGB(102,102,102)},0.08) end)
                     end
                 end
                 Build(lst)
                 HBtn.MouseButton1Click:Connect(function()
                     op=not op
                     local oh=OLL.AbsoluteContentSize.Y+6
-                    if op then 
-                        Tween(OB,{Size=UDim2.new(1,0,0,oh)},0.15)
-                        Tween(Arr,{Rotation=180},0.12)
-                        Wrap.Size=UDim2.new(1,0,0,GetElH()+4+oh)
-                    else 
-                        Tween(OB,{Size=UDim2.new(1,0,0,0)},0.12)
-                        Tween(Arr,{Rotation=0},0.12)
-                        Wrap.Size=UDim2.new(1,0,0,GetElH()) 
-                    end
+                    if op then Tween(OB,{Size=UDim2.new(1,0,0,oh)},0.15) Tween(Arr,{Rotation=180},0.12) Wrap.Size=UDim2.new(1,0,0,GetElH()+4+oh)
+                    else Tween(OB,{Size=UDim2.new(1,0,0,0)},0.12) Tween(Arr,{Rotation=0},0.12) Wrap.Size=UDim2.new(1,0,0,GetElH()) end
                     Resize()
                 end)
-                HBtn.MouseEnter:Connect(function() 
-                    Tween(hS,{Transparency=0.85},0.08)
-                    Tween(HL,{TextColor3=Color3.fromRGB(200,200,200)},0.08) 
-                end)
-                HBtn.MouseLeave:Connect(function() 
-                    Tween(hS,{Transparency=0.92},0.08)
-                    Tween(HL,{TextColor3=T.Sub},0.08) 
-                end)
+                HBtn.MouseEnter:Connect(function() Tween(hS,{Transparency=0.85},0.08) Tween(HL,{TextColor3=Color3.fromRGB(200,200,200)},0.08) end)
+                HBtn.MouseLeave:Connect(function() Tween(hS,{Transparency=0.92},0.08) Tween(HL,{TextColor3=CurrentTheme.Sub},0.08) end)
                 Resize()
                 local F={}
-                function F:Refresh(nl) 
-                    Build(nl)
-                    op=false
-                    OB.Size=UDim2.new(1,0,0,0)
-                    Arr.Rotation=0
-                    Wrap.Size=UDim2.new(1,0,0,GetElH())
-                    Resize() 
-                end
+                function F:Refresh(nl) Build(nl) op=false OB.Size=UDim2.new(1,0,0,0) Arr.Rotation=0 Wrap.Size=UDim2.new(1,0,0,GetElH()) Resize() end
                 return F
             end
             Resize()
